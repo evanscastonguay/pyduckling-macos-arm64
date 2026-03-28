@@ -16,7 +16,6 @@ system-ghc: true
 skip-ghc-check: false
 extra-lib-dirs:
   - /opt/homebrew/lib
-  - /Users/evanscastonguay/.ghcup/ghc/9.2.8/lib/ghc-9.2.8/lib/aarch64-osx-ghc-9.2.8/rts-1.0.2
 extra-include-dirs:
   - /opt/homebrew/include
 ghc-options:

@@ -52,10 +52,13 @@ jobs:
       - name: Build fat static library
         run: |
           STACK_SNAP=$(find ~/.stack/snapshots -type d -name "aarch64-osx-ghc-9.2.8" | head -1)
+          GHC_RTS_DIR=$(find $(ghc --print-libdir) -type d -name "rts-*" | head -1)
+          FFI_OBJ_DIR=$(find duckling-ffi/.stack-work -type d -name "build" -path "*/ghc-9.2.8/*" | head -1)
           mkdir -p ext_lib
-          stack exec -- ghc \
+          ghc \
             -staticlib -no-hs-main -fPIC \
             -o ext_lib/libducklingffi.a \
+            -L"$GHC_RTS_DIR" \
             -package-db "$STACK_SNAP/pkgdb" \
             -package duckling -package aeson -package text -package bytestring \
             -package string-conversions -package extra -package unordered-containers \
