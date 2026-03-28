@@ -35,7 +35,7 @@ jobs:
           echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
 
       - name: Install Rust
-        uses: dtolnay/rust-action@master
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Cache Haskell build
         uses: actions/cache@v4
