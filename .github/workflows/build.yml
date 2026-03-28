@@ -1,44 +1,100 @@
 name: Build
+
 on:
-  push: {}
+  push:
+    branches: [main]
   pull_request: {}
   release:
-    types: [ published ]
+    types: [published]
+
 jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+  build-macos-arm64:
+    runs-on: macos-14
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
-      - name: Cache build dependencies
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-build-deps
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
-          key: ${{ runner.os }}-build-${{ env.cache-name }}
-          path: |
-            .cache
-            duckling-ffi/.stack-work
-      - name: Run build script
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install system dependencies
+        run: brew install pcre gmp
+
+      - name: Install GHCup
         run: |
-          ./build.sh
-      - name: Archive artifacts
+          curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | \
+            BOOTSTRAP_HASKELL_NONINTERACTIVE=1 \
+            BOOTSTRAP_HASKELL_GHC_VERSION=9.2.8 \
+            BOOTSTRAP_HASKELL_INSTALL_STACK=1 \
+            BOOTSTRAP_HASKELL_INSTALL_HLS=0 sh
+          echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@master
+
+      - name: Cache Haskell build
+        uses: actions/cache@v4
+        with:
+          key: haskell-macos-arm64-${{ hashFiles('duckling-ffi/stack.yaml', 'duckling-ffi/duckling-ffi.cabal') }}
+          path: |
+            ~/.stack
+            duckling-ffi/.stack-work
+
+      - name: Build Haskell FFI library
+        working-directory: duckling-ffi
+        run: stack build --system-ghc --allow-different-user
+
+      - name: Build fat static library
+        run: |
+          STACK_SNAP=$(find ~/.stack/snapshots -type d -name "aarch64-osx-ghc-9.2.8" | head -1)
+          mkdir -p ext_lib
+          stack exec -- ghc \
+            -staticlib -no-hs-main -fPIC \
+            -o ext_lib/libducklingffi.a \
+            -package-db "$STACK_SNAP/pkgdb" \
+            -package duckling -package aeson -package text -package bytestring \
+            -package string-conversions -package extra -package unordered-containers \
+            -package directory -package time -package timezone-olson \
+            -package timezone-series -package filepath \
+            duckling-ffi/DucklingFFI/FFI.hs
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Build wheel
+        run: maturin build --release --interpreter python${{ matrix.python-version }}
+
+      - name: Install and test
+        run: |
+          pip install target/wheels/*.whl
+          pip install pytest pendulum
+          pytest -x -v duckling/tests
+
+      - name: Upload wheel
         uses: actions/upload-artifact@v4
         with:
-          name: wheels
-          path: |
-            target/wheels/*.tar.gz
-            target/wheels/*.whl
+          name: wheel-macos-arm64-py${{ matrix.python-version }}
+          path: target/wheels/*.whl
+
   publish:
-    needs: build-and-test
+    needs: [build-macos-arm64]
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Download wheels
+      - name: Download all wheels
         uses: actions/download-artifact@v4
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: wheels/
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          path: wheels
+          merge-multiple: true
+
+      - name: Upload wheels to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: wheels/*.whl
