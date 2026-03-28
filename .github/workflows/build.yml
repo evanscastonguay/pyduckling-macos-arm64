@@ -45,26 +45,24 @@ jobs:
             ~/.stack
             duckling-ffi/.stack-work
 
-      - name: Build Haskell FFI library
+      - name: Build Duckling dependencies
         working-directory: duckling-ffi
-        run: stack build --system-ghc --allow-different-user
+        run: stack build --system-ghc --allow-different-user --only-dependencies
 
       - name: Build fat static library
+        working-directory: duckling-ffi
         run: |
           STACK_SNAP=$(find ~/.stack/snapshots -type d -name "aarch64-osx-ghc-9.2.8" | head -1)
-          GHC_RTS_DIR=$(find $(ghc --print-libdir) -type d -name "rts-*" | head -1)
-          FFI_OBJ_DIR=$(find duckling-ffi/.stack-work -type d -name "build" -path "*/ghc-9.2.8/*" | head -1)
-          mkdir -p ext_lib
-          ghc \
+          mkdir -p ../ext_lib
+          stack exec -- ghc \
             -staticlib -no-hs-main -fPIC \
-            -o ext_lib/libducklingffi.a \
-            -L"$GHC_RTS_DIR" \
+            -o ../ext_lib/libducklingffi.a \
             -package-db "$STACK_SNAP/pkgdb" \
             -package duckling -package aeson -package text -package bytestring \
             -package string-conversions -package extra -package unordered-containers \
             -package directory -package time -package timezone-olson \
             -package timezone-series -package filepath \
-            duckling-ffi/DucklingFFI/FFI.hs
+            DucklingFFI/FFI.hs
 
       - name: Install maturin
         run: pip install maturin

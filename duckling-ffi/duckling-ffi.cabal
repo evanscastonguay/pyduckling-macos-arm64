@@ -29,7 +29,7 @@ library
                      , timezone-series
                      , filepath
   default-language:    Haskell2010
-  ghc-options: -no-hs-main -fPIC
+  ghc-options: -no-hs-main -staticlib -fPIC -o libducklingffi.a
   other-extensions: ForeignFunctionInterface
 
 source-repository head
