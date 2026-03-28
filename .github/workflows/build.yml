@@ -52,12 +52,13 @@ jobs:
       - name: Build fat static library
         working-directory: duckling-ffi
         run: |
-          STACK_SNAP=$(find ~/.stack/snapshots -type d -name "aarch64-osx-ghc-9.2.8" | head -1)
+          STACK_PKGDB=$(find ~/.stack/snapshots -type d -name "pkgdb" | head -1)
+          echo "Using package DB: $STACK_PKGDB"
           mkdir -p ../ext_lib
           stack exec -- ghc \
             -staticlib -no-hs-main -fPIC \
             -o ../ext_lib/libducklingffi.a \
-            -package-db "$STACK_SNAP/pkgdb" \
+            -package-db "$STACK_PKGDB" \
             -package duckling -package aeson -package text -package bytestring \
             -package string-conversions -package extra -package unordered-containers \
             -package directory -package time -package timezone-olson \
