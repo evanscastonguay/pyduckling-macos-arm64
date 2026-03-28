@@ -2,14 +2,22 @@ packages:
   - .
 extra-deps:
   - git: https://github.com/facebook/duckling.git
-    commit: 7520daaeba28691cda8e1b5c3d946028a28fb64b
-  - regex-posix-clib-2.7
-  - dependent-sum-0.7.1.0@sha256:0e419237f5b86da3659772afff9cab355c0f8d5b3fdb15a5b30e673d8dc83941,2147
-  - constraints-extras-0.3.1.0@sha256:c70fcf437e1d640cfd50a8eda1db47a64e49c96857e08fd0d8c438327d908ac1,1846
-resolver: lts-16.31
-allow-newer: false
+    commit: 59a13ff87b1aa8be6b93d387244f8636b26185c5
+  - dependent-sum-0.7.2.0
+  - constraints-extras-0.4.0.0
+  - some-1.0.6
+  - snap-core-1.0.5.1@sha256:d587753a34518a6a932e7d473503661e8d96a22681dad98d8f5865229b1e5c9e,9823
+  - snap-server-1.1.2.1@sha256:3ed4373b3bc4a0f2d59752557dfa0f4caf1a198322451350b7cf6ae757b7eb42,15464
+  - readable-0.3.1@sha256:13b71e63627c21447a35fe4441154410c96ba1f241cf0353692883d0eebf2085,1127
+resolver: lts-20.26
+allow-newer: true
 install-ghc: false
 system-ghc: true
 skip-ghc-check: false
+extra-lib-dirs:
+  - /opt/homebrew/lib
+  - /Users/evanscastonguay/.ghcup/ghc/9.2.8/lib/ghc-9.2.8/lib/aarch64-osx-ghc-9.2.8/rts-1.0.2
+extra-include-dirs:
+  - /opt/homebrew/include
 ghc-options:
   "$everything": -fPIC
